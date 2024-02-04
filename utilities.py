@@ -1,3 +1,5 @@
+import os
+import subprocess
 import matplotlib.pyplot as plt
 import scipy.ndimage as ndi
 import numpy as np
@@ -88,3 +90,55 @@ def compute_number_of_cells(image_path: str,
     print(f"Number of labels: {n_labels}")
 
     plt.imshow(labels, cmap='rainbow')
+
+def predict(img: str,
+            folder: str = None,
+            scale: float = 1.0,
+            verbose: bool = True):
+    
+    """
+    Predict the segmentation of an image using a pre-trained model.
+
+    Parameters
+    ----------
+    img : str
+        Name of the image to predict. If 'ALL', all images in the folder are predicted.
+
+    folder : str, optional
+        Folder where the image is located. If None, the image is assumed to be in the current working directory.
+
+    scale : float, optional
+        Scale of the image. Must be 0.5 or 1.0. 1.0 is more computationally expensive.
+
+    verbose : bool, optional
+        Whether to print information about the prediction.
+
+    Returns
+    -------
+    None
+
+    Examples
+    --------
+    >>> predict('image_1.png', folder='data', scale=0.5)
+    >>> predict('ALL', folder='car_test', scale=1.0)
+    """
+
+    scale = 1.0 if scale not in [0.5, 1.0] else scale
+
+    if folder and img.upper() == 'ALL':
+        for img in os.listdir(folder):
+            predict(img, folder, scale, verbose)
+        return
+
+    path_img = f"{folder}/{img}" if folder else img
+
+    path_return = os.path.join('return_predictions', f"prediction_{path_img.split('/')[-1]}")
+
+    bash_command = f"python3 Pytorch-UNet-3.0/predict.py -i {path_img} -o {path_return} --model models/unet_carvana_scale{scale}_epoch2.pth"
+
+    if verbose:
+        print(f"Running command: {bash_command}")
+
+    process = subprocess.Popen(bash_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+    _, _ = process.communicate()
