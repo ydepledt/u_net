@@ -2,3 +2,4 @@ __pycache__/
 models/*.pth
 return_predictions/*.jpg
 merged_images/*.jpg
+data_augmentation/*.jpg
