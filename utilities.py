@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import scipy.ndimage as ndi
 import numpy as np
 
+from PIL import Image
+
 # Some useful colors
 COLORS = {'BLUE': '#3D6FFF',
           'RED': '#FF3D3D',
@@ -142,3 +144,98 @@ def predict(img: str,
     process = subprocess.Popen(bash_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
     _, _ = process.communicate()
+
+
+def merge_images_side_by_side(original_image: str, 
+                              segmented_image: str):
+    """
+    Merge two images side by side.
+
+    Parameters
+    ----------
+    original_image : str
+        Path to the original image.
+    
+    segmented_image : str
+        Path to the segmented image.
+
+    Returns
+    -------
+    None
+    """
+    
+    # Open the images
+    image1 = Image.open(original_image)
+    image2 = Image.open(segmented_image)
+
+    # Ensure both images have the same height
+    min_height = min(image1.height, image2.height)
+    image1 = image1.crop((0, 0, image1.width, min_height))
+    image2 = image2.crop((0, 0, image2.width, min_height))
+
+    # Calculate the width of the output image
+    total_width = image1.width + image2.width
+
+    # Create a new blank image with the required dimensions
+    merged_image = Image.new('RGB', (total_width, min_height))
+
+    # Paste the first image on the left side
+    merged_image.paste(image1, (0, 0))
+
+    # Paste the second image on the right side
+    merged_image.paste(image2, (image1.width, 0))
+
+    # Extract the file name from the original image
+    original_image_name = os.path.basename(original_image)
+
+    output_image = f"merged_images/merged_{original_image_name}"
+
+    # Save the merged image
+    merged_image.save(output_image)
+
+def merge_all_images():
+    """
+    Merge all images in a folder.
+
+    Parameters
+    ----------
+    folder : str
+        Folder where the images are located.
+
+    Returns
+    -------
+    None
+    """
+
+    for img in os.listdir('return_predictions'):
+        if img.endswith('.jpg'):
+            base_int = img.split('_')[-1]
+            merge_images_side_by_side(f"car_test/car_{base_int}", f"return_predictions/prediction_car_{base_int}")
+
+
+def print_images_in_folder(folder_path: str):
+    """
+    Print all images in a folder.
+    
+    Parameters
+    ----------
+    folder_path : str
+        Path to the folder containing the images.
+        
+    Returns
+    -------
+    None
+    """
+    
+    # List all files in the folder
+    files = os.listdir(folder_path)
+    
+    image_files = [f for f in files if f.endswith(('.jpg', '.jpeg', '.png', '.gif'))]
+    
+    # Display each image
+    for img_file in image_files:
+        img_path = os.path.join(folder_path, img_file)
+        img = Image.open(img_path)
+        plt.imshow(img)
+        plt.axis('off')  # Turn off axis
+        plt.show()
